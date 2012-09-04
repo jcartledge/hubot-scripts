@@ -2,7 +2,7 @@
 #   Check status, uptime and response time from Pingdom
 #
 # Dependencies:
-#   "pingdom-client": "0.1.0"
+#   "pingdom": "0.6.2"
 #   "moment": "1.7.0"
 #
 # Configuration:
@@ -18,9 +18,7 @@
 
 module.exports = (robot) ->
   moment = require 'moment'
-  pc = (require 'pingdom-client').createClient process.env.PINGDOM_API_KEY,
-    process.env.PINGDOM_USERNAME,
-    process.env.PINGDOM_PASSWORD
+  pc = require 'pingdom'
 
   output = (check) -> """
     Site: #{check.name}
@@ -31,7 +29,12 @@ module.exports = (robot) ->
     """
 
   robot.hear /pingdom (.+)/, (msg) ->
-    console.log pc
     name_re = new RegExp msg.match[1].replace /[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"
-    pc.getCheckList (err, checks) ->
-      msg.send output check for check in checks.checks when check.name.match name_re
+    pc.getChecks(
+      process.env.PINGDOM_API_KEY
+      process.env.PINGDOM_USERNAME
+      process.env.PINGDOM_PASSWORD
+      {}
+      (checks) ->
+        msg.send output check for check in checks.checks when check.name.match name_re
+    )
