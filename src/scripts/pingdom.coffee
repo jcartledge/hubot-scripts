@@ -17,20 +17,21 @@
 #   jcartledge
 
 module.exports = (robot) ->
-  pc = (require 'pingdom-client').createClient(
-    process.env.PINGDOM_API_KEY,
-    process.env.PINGDOM_USERNAME,
-    process.env.PINGDOM_PASSWORD)
   moment = require 'moment'
+  pc = (require 'pingdom-client').createClient process.env.PINGDOM_API_KEY,
+    process.env.PINGDOM_USERNAME,
+    process.env.PINGDOM_PASSWORD
+
+  output = (check) -> """
+    Site: #{check.name}
+    Status: #{check.status}
+    Response time: #{check.lastresponsetime}ms
+    Last check: #{(moment.unix check.lasttesttime).fromNow()}
+    Last error: #{(moment.unix check.lasterrortime).fromNow()}
+    """
 
   robot.hear /pingdom (.+)/, (msg) ->
-    output = (check) ->
-      msg.send "Site: #{check.name}"
-      msg.send "Status: #{check.status}"
-      msg.send "Response time: #{check.lastresponsetime}ms"
-      msg.send "Last check: #{(moment.unix check.lasttesttime).fromNow()}"
-      msg.send "Last error: #{(moment.unix check.lasterrortime).fromNow()}"
-
+    console.log pc
     name_re = new RegExp msg.match[1].replace /[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"
     pc.getCheckList (err, checks) ->
-      output check for check in checks.checks when check.name.match name_re
+      msg.send output check for check in checks.checks when check.name.match name_re
