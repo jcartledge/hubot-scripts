@@ -30,12 +30,11 @@ module.exports = (robot) ->
 
   robot.hear /pingdom (.+)/, (msg) ->
     name_re = new RegExp msg.match[1].replace /[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"
-    args = [
-      process.env.PINGDOM_USERNAME
-      process.env.PINGDOM_PASSWORD
-      process.env.PINGDOM_API_KEY
-    ]
-    cb = (checks) ->
-      msg.send output check for check in checks.checks when check.name.match name_re
-
-    pc.getChecks (args.concat [{}, cb])...
+    pc.getChecks(
+      process.env.PINGDOM_USERNAME,
+      process.env.PINGDOM_PASSWORD,
+      process.env.PINGDOM_API_KEY,
+      {},
+      (response) ->
+        msg.send output check for check in response.checks when check.name.match name_re
+    )
