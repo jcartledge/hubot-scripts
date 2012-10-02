@@ -24,16 +24,17 @@ module.exports = (robot) ->
         msg.send "Pivotal says: #{err}"
         return
       (new Parser).parseString body, (err, json)->
-        for project in json.project
+        for project in json.projects.project
           msg.http("https://www.pivotaltracker.com/services/v3/projects/#{project.id}/stories/#{story_id}").headers("X-TrackerToken": token).get() (err, res, body) ->
             if err
               msg.send "Pivotal says: #{err}"
               return
             if res.statusCode != 500
               (new Parser).parseString body, (err, story)->
+                story = story.story
                 if !story.id
                   return
-                message = "##{story.id['#']} #{story.name}"
+                message = "##{story.id[0]['_']} #{story.name}"
                 message += " (#{story.owned_by})" if story.owned_by
                 message += " is #{story.current_state}" if story.current_state && story.current_state != "unstarted"
                 msg.send message
