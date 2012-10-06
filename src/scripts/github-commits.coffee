@@ -24,16 +24,19 @@ module.exports = (robot) ->
     [url, owner, repo, sha] = msg.match
     url = "https://api.github.com/repos/#{owner}/#{repo}/commits/#{sha}"
 
-    github.get url, (resp) ->
-
-      time = moment(resp.commit.committer.date).fromNow()
-      msg.send "#{resp.commit.author.name} #{time}."
-
-      msg.send resp.commit.message
-
+    author = (commit) -> "By #{commit.author.name}"
+    time = (commit) -> moment(commit.committer.date).fromNow()
+    changes = (stats) ->
       message = []
-      message.push "#{resp.stats.additions} additions" if resp.stats.additions > 1
-      message.push "#{resp.stats.additions} addition" if resp.stats.additions == 1
-      message.push "#{resp.stats.deletions} deletions" if resp.stats.deletions > 1
-      message.push "#{resp.stats.deletions} deletion" if resp.stats.deletions == 1
-      msg.send message.join(', ') + '.' if message
+      message.push "#{stats.additions} additions" if stats.additions > 1
+      message.push "#{stats.additions} addition" if stats.additions == 1
+      message.push "#{stats.deletions} deletions" if stats.deletions > 1
+      message.push "#{stats.deletions} deletion" if stats.deletions == 1
+      message.join(', ') + '.' if message
+
+    github.get url, (resp) ->
+      msg.send [
+        author(resp.commit)
+        time(resp.commit)
+        changes(resp.stats)
+      ].join "\n"
