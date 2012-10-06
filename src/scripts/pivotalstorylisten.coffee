@@ -2,7 +2,7 @@
 #   Listen for a specific story from PivotalTracker
 #
 # Dependencies:
-#   None
+#   "xml2js"
 #
 # Configuration:
 #   HUBOT_PIVOTAL_TOKEN
@@ -12,6 +12,7 @@
 #
 # Authors:
 #   christianchristensen
+#   jcartledge
 
 module.exports = (robot) ->
   robot.hear /(sid-|SID-|pivotaltracker.com\/story\/show)/i, (msg) ->
@@ -19,11 +20,15 @@ module.exports = (robot) ->
     token = process.env.HUBOT_PIVOTAL_TOKEN
     story_id = msg.message.text.match(/\d+$/) # look for some numbers in the string
 
+    dump_error = (err) ->
+      msg.send("Pivotal says: #{err}")
+      return
+
     story_url = (project_id, story_id) ->
       "https://www.pivotaltracker.com/services/v3/projects/#{project.id}/stories/#{story.id}"
 
     projects_cb =  (err, res, body) ->
-      msg.send("Pivotal says: #{err}") and return if err
+      return dump_error(err) if err
       (new Parser).parseString body, (err, json)->
         for project in json.projects.project
           msg.http(story_url(project.id, story_id))
@@ -31,7 +36,7 @@ module.exports = (robot) ->
             .get() story_cb
 
     story_cb = (err, res, body) ->
-      msg.send("Pivotal says: #{err}") and return if err
+      return dump_error(err) if err
       if res.statusCode != 500
         (new Parser).parseString body, (err, story)->
           story = story.story
